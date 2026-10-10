@@ -14,7 +14,7 @@ import numpy as np
 import onnxruntime as ort
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import Response
-from PIL import Image, ImageDraw, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 MODEL_PATH = os.getenv("MODEL_PATH", str(Path(__file__).parent / "models" / "best.onnx"))
 CLASS_NAMES = ["boots", "helmet", "nohelmet", "novest", "person", "vest"]  # same order as data.yaml
@@ -141,11 +141,16 @@ def predict(file: UploadFile = File(...)):
 def predict_image(file: UploadFile = File(...)):
     image, detections = detect(file)
     draw = ImageDraw.Draw(image)
+    # Scale line width and text size with the image so big photos stay readable
+    longest_side = max(image.size)
+    line_w = max(3, round(longest_side / 300))
+    font = ImageFont.load_default(size=max(14, round(longest_side / 60)))
     for d in detections:
         color = "red" if d["class"] in VIOLATION_CLASSES else "lime"
         x1, y1, x2, y2 = d["box"]
-        draw.rectangle([x1, y1, x2, y2], outline=color, width=3)
-        draw.text((x1 + 3, y1 + 3), f'{d["class"]} {d["confidence"]:.2f}', fill=color)
+        draw.rectangle([x1, y1, x2, y2], outline=color, width=line_w)
+        draw.text((x1 + line_w + 2, y1 + line_w + 2),
+                  f'{d["class"]} {d["confidence"]:.2f}', fill=color, font=font)
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     return Response(content=buffer.getvalue(), media_type="image/png")

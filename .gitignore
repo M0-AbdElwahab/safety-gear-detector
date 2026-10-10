@@ -9,3 +9,4 @@ datasets/
 data/
 outputs/
 .env
+!models/best.onnx

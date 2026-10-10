@@ -1,0 +1,8 @@
+.venv/
+.git/
+results/
+assets/
+sample_images/
+models/best.pt
+__pycache__/
+*.pyc
